@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PDF → Word pour notes</title>
+  <style>
+    :root {
+      --bg: #eef3ff;
+      --bg-2: #f8faff;
+      --card: rgba(255, 255, 255, 0.9);
+      --card-strong: #ffffff;
+      --card-2: #f4f7ff;
+      --text: #172033;
+      --muted: #64708a;
+      --accent: #5b7cff;
+      --accent-2: #7a5cff;
+      --accent-3: #8ea4ff;
+      --ok: #18864b;
+      --danger: #c93c3c;
+      --border: rgba(23, 32, 51, 0.1);
+      --border-strong: rgba(91, 124, 255, 0.18);
+      --shadow: 0 24px 70px rgba(39, 58, 110, 0.12);
+      --shadow-soft: 0 12px 30px rgba(39, 58, 110, 0.08);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 16px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(91,124,255,0.18), transparent 24%),
+        radial-gradient(circle at 88% 16%, rgba(122,92,255,0.14), transparent 22%),
+        radial-gradient(circle at 50% 100%, rgba(91,124,255,0.08), transparent 30%),
+        linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.38) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.38) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,0.4), transparent 85%);
+      opacity: 0.4;
+    }
+
+    .wrap {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 34px 0 64px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .shell {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.65);
+      border-radius: 36px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.72), rgba(255,255,255,0.9));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      padding: clamp(24px, 4vw, 40px);
+    }
+
+    .shell::after {
+      content: "";
+      position: absolute;
+      width: 340px;
+      height: 340px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(91,124,255,0.16), transparent 70%);
+      top: -140px;
+      right: -90px;
+      pointer-events: none;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 28px;
+      align-items: start;
+      margin-bottom: 28px;
+    }
+
+    .hero-copy {
+      padding: 6px 4px 0;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: rgba(255,255,255,0.72);
+      color: #4560d6;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 0 5px rgba(91,124,255,0.12);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(34px, 5vw, 60px);
+      line-height: 0.98;
+      letter-spacing: -0.04em;
+      max-width: 11ch;
+    }
+
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.75;
+    }
+
+    .hero-panel {
+      position: relative;
+      min-height: 100%;
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      background:
+        linear-gradient(160deg, rgba(91,124,255,0.18), rgba(122,92,255,0.08) 42%, rgba(255,255,255,0.82) 100%);
+      border: 1px solid rgba(91,124,255,0.14);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.75);
+      overflow: hidden;
+    }
+
+    .hero-panel::before,
+    .hero-panel::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .hero-panel::before {
+      width: 220px;
+      height: 220px;
+      right: -80px;
+      top: -70px;
+      background: radial-gradient(circle, rgba(122,92,255,0.22), transparent 72%);
+    }
+
+    .hero-panel::after {
+      width: 160px;
+      height: 160px;
+      left: -40px;
+      bottom: -60px;
+      background: radial-gradient(circle, rgba(91,124,255,0.22), transparent 72%);
+    }
+
+    .mini-stack {
+      position: relative;
+      display: grid;
+      gap: 14px;
+      z-index: 1;
+    }
+
+    .mini-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px;
+      border-radius: var(--radius-lg);
+      background: rgba(255,255,255,0.78);
+      border: 1px solid rgba(255,255,255,0.8);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .mini-icon {
+      flex: 0 0 46px;
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      color: white;
+      font-size: 18px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    }
+
+    .mini-label {
+      margin: 0 0 3px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #41506b;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .mini-text {
+      margin: 0;
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .card,
+    .side-card {
+      border-radius: var(--radius-xl);
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.9);
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(10px);
+    }
+
+    .card {
+      padding: clamp(22px, 4vw, 34px);
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .section-title {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+
+    .section-sub {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .badge {
+      white-space: nowrap;
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: rgba(91,124,255,0.1);
+      border: 1px solid rgba(91,124,255,0.16);
+      font-size: 12px;
+      font-weight: 800;
+      color: #4a66dc;
+      letter-spacing: 0.03em;
+    }
+
+    .label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 700;
+      font-size: 14px;
+      color: #334155;
+    }
+
+    .upload-shell {
+      position: relative;
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+      border-radius: 22px;
+      border: 1.5px dashed rgba(91,124,255,0.24);
+      background:
+        linear-gradient(180deg, rgba(91,124,255,0.04), rgba(255,255,255,0.84));
+      margin-bottom: 18px;
+    }
+
+    .upload-head {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .upload-icon {
+      width: 54px;
+      height: 54px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, rgba(91,124,255,0.16), rgba(122,92,255,0.16));
+      color: #4d67dc;
+      font-size: 22px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.85);
+    }
+
+    .upload-title {
+      margin: 0 0 4px;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .upload-sub {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      border: 1px solid rgba(23, 32, 51, 0.08);
+      background: var(--card-strong);
+      color: var(--text);
+      border-radius: 16px;
+      padding: 12px 14px;
+      font-size: 15px;
+      outline: none;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+      transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+    }
+
+    input[type="file"]:hover,
+    input[type="file"]:focus {
+      border-color: rgba(91,124,255,0.3);
+      box-shadow: 0 0 0 5px rgba(91,124,255,0.08);
+    }
+
+    .action-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    button {
+      position: relative;
+      width: min(360px, 100%);
+      max-width: 100%;
+      min-height: 68px;
+      border: 0;
+      border-radius: 18px;
+      padding: 16px 22px;
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      color: white;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 18px 30px rgba(91,124,255,0.24);
+      transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+    }
+
+    button::after {
+      content: "";
+      position: absolute;
+      inset: 1px;
+      border-radius: inherit;
+      background: linear-gradient(180deg, rgba(255,255,255,0.18), transparent 45%);
+      pointer-events: none;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 22px 34px rgba(91,124,255,0.28);
+    }
+
+    button:active { transform: translateY(0); }
+    button:disabled { cursor: not-allowed; opacity: 0.72; transform: none; box-shadow: 0 10px 18px rgba(91,124,255,0.16); }
+
+    .status-wrap {
+      border-radius: 18px;
+      padding: 16px 18px;
+      background: linear-gradient(180deg, rgba(244,247,255,0.88), rgba(255,255,255,0.92));
+      border: 1px solid var(--border);
+    }
+
+    .status-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #52617e;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 0 4px rgba(91,124,255,0.08);
+    }
+
+    .status {
+      min-height: 24px;
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .status.ok { color: var(--ok); }
+    .status.err { color: var(--danger); }
+
+    .side-card {
+      padding: 22px;
+    }
+
+    .side-title {
+      margin: 0 0 16px;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .feature-list {
+      display: grid;
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .feature-item {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 12px;
+      align-items: start;
+      padding: 14px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(244,247,255,0.92));
+      border: 1px solid rgba(23,32,51,0.06);
+    }
+
+    .feature-num {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: rgba(91,124,255,0.1);
+      color: #4f69dd;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .feature-item strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .feature-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .hint,
+    .footer {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.75;
+    }
+
+    .hint {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(23,32,51,0.08);
+    }
+
+    .footer {
+      margin-top: 18px;
+    }
+
+    code {
+      background: rgba(31, 41, 55, 0.06);
+      padding: 3px 7px;
+      border-radius: 8px;
+    }
+
+    @media (max-width: 900px) {
+      .hero,
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+
+      h1 { max-width: none; }
+      .hero-panel { order: -1; }
+    }
+
+    @media (max-width: 640px) {
+      .wrap {
+        width: min(100% - 20px, 1120px);
+        padding: 16px 0 34px;
+      }
+
+      .shell {
+        border-radius: 28px;
+        padding: 18px;
+      }
+
+      .card-head {
+        flex-direction: column;
+      }
+
+      .upload-head {
+        align-items: start;
+      }
+
+      .mini-card,
+      .feature-item,
+      .side-card,
+      .status-wrap,
+      .upload-shell {
+        border-radius: 18px;
+      }
+
+      button {
+        width: 100%;
+        min-height: 62px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="shell">
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow">Conversion rapide et propre</div>
+          <h1>PDF → Word pour notes</h1>
+          <p class="sub">
+            Charge un PDF A4 vertical dont chaque page contient 2 slides superposées. L'outil découpe chaque page en haut/bas,
+            met une slide par page dans un document Word, puis télécharge automatiquement le fichier <code>.docx</code>.
+          </p>
+        </div>
+
+        
+      </section>
+
+      <div class="content-grid">
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <h2 class="section-title">Générer le document</h2>
+              <p class="section-sub">Même comportement, présentation retravaillée pour être plus claire et plus moderne.</p>
+            </div>
+          </div>
+
+          <label class="label" for="pdfFile">PDF source</label>
+
+          <div class="upload-shell">
+            <div class="upload-head">
+              <div class="upload-icon">↑</div>
+              <div>
+                <p class="upload-title">Sélection du fichier</p>
+                <p class="upload-sub">Choisis ton document PDF, puis lance la génération du Word.</p>
+              </div>
+            </div>
+            <input id="pdfFile" type="file" accept="application/pdf" />
+          </div>
+
+          <div class="action-row">
+            <button id="generateBtn" type="button">Générer le Word</button>
+          </div>
+
+          <div class="status-wrap" aria-live="polite">
+            <div class="status-label"><span class="status-dot"></span> Statut</div>
+            <div id="status" class="status">En attente d'un PDF.</div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+  import * as pdfjsLib from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/+esm';
+  import { Document, Packer, Paragraph, ImageRun, AlignmentType, PageOrientation, TextRun } from 'https://cdn.jsdelivr.net/npm/docx@9.5.1/+esm';
+
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.worker.min.mjs';
+
+  const pdfFileInput = document.getElementById('pdfFile');
+  const generateBtn = document.getElementById('generateBtn');
+  const statusEl = document.getElementById('status');
+
+  function setStatus(message, type = '') {
+    statusEl.textContent = message;
+    statusEl.className = `status ${type}`.trim();
+  }
+
+  async function fileToUint8Array(file) {
+    const buffer = await file.arrayBuffer();
+    return new Uint8Array(buffer);
+  }
+
+  async function canvasToUint8Array(canvas) {
+    const blob = await new Promise((resolve, reject) => {
+      canvas.toBlob((b) => {
+        if (!b) {
+          reject(new Error('Impossible de convertir le canvas en image.'));
+          return;
+        }
+        resolve(b);
+      }, 'image/jpeg', 0.92);
+    });
+
+    return new Uint8Array(await blob.arrayBuffer());
+  }
+
+  function cropCanvas(sourceCanvas, x, y, width, height) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { alpha: false });
+
+    canvas.width = width;
+    canvas.height = height;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(
+      sourceCanvas,
+      x, y, width, height,
+      0, 0, width, height
+    );
+
+    return canvas;
+  }
+
+  function makeHalfCanvas(sourceCanvas, half) {
+    const sx = 0;
+    const sy = half === 'top' ? 0 : Math.floor(sourceCanvas.height / 2);
+    const sw = sourceCanvas.width;
+    const sh = Math.floor(sourceCanvas.height / 2);
+
+    return cropCanvas(sourceCanvas, sx, sy, sw, sh);
+  }
+
+  async function renderPdfPageToCanvas(page) {
+    const scale = 1.7;
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { alpha: false });
+    const outputScale = window.devicePixelRatio || 1;
+
+    canvas.width = Math.floor(viewport.width * outputScale);
+    canvas.height = Math.floor(viewport.height * outputScale);
+
+    const transform = outputScale !== 1
+      ? [outputScale, 0, 0, outputScale, 0, 0]
+      : null;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    await page.render({ canvasContext: ctx, viewport, transform }).promise;
+    return canvas;
+  }
+
+  function getRowInkRatio(ctx, width, y, sampleStep = 8) {
+    const data = ctx.getImageData(0, y, width, 1).data;
+    let darkPixels = 0;
+    let sampled = 0;
+
+    for (let x = 0; x < width; x += sampleStep) {
+      const i = x * 4;
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const brightness = (r + g + b) / 3;
+
+      if (brightness < 245) darkPixels++;
+      sampled++;
+    }
+
+    return sampled ? darkPixels / sampled : 0;
+  }
+
+  function findLargestBlankBandAroundMiddle(canvas) {
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    const middle = Math.floor(height / 2);
+
+    const searchStart = Math.floor(height * 0.30);
+    const searchEnd = Math.floor(height * 0.70);
+
+    let bestStart = -1;
+    let bestEnd = -1;
+    let currentStart = -1;
+
+    for (let y = searchStart; y <= searchEnd; y++) {
+      const inkRatio = getRowInkRatio(ctx, width, y, 10);
+      const isBlankRow = inkRatio < 0.01;
+
+      if (isBlankRow) {
+        if (currentStart === -1) currentStart = y;
+      } else if (currentStart !== -1) {
+        const currentEnd = y - 1;
+        if (
+          bestStart === -1 ||
+          (currentEnd - currentStart) > (bestEnd - bestStart)
+        ) {
+          bestStart = currentStart;
+          bestEnd = currentEnd;
+        }
+        currentStart = -1;
+      }
+    }
+
+    if (currentStart !== -1) {
+      const currentEnd = searchEnd;
+      if (
+        bestStart === -1 ||
+        (currentEnd - currentStart) > (bestEnd - bestStart)
+      ) {
+        bestStart = currentStart;
+        bestEnd = currentEnd;
+      }
+    }
+
+    if (bestStart === -1) return null;
+
+    const bandHeight = bestEnd - bestStart + 1;
+    const bandCenter = Math.floor((bestStart + bestEnd) / 2);
+
+    return { bestStart, bestEnd, bandHeight, bandCenter, middle };
+  }
+
+  function shouldSplitIntoTwoSlides(canvas) {
+    const band = findLargestBlankBandAroundMiddle(canvas);
+    if (!band) return false;
+
+    const { bandHeight, bandCenter, middle } = band;
+    const distanceFromMiddle = Math.abs(bandCenter - middle);
+
+    // Heuristique :
+    // - grande bande blanche près du centre
+    // - typique d'une page A4 contenant 2 slides l'une au-dessus de l'autre
+    return bandHeight > canvas.height * 0.035 && distanceFromMiddle < canvas.height * 0.10;
+  }
+
+  function trimWhiteMargins(canvas, padding = 12) {
+    const ctx = canvas.getContext('2d');
+    const { width, height } = canvas;
+    const imageData = ctx.getImageData(0, 0, width, height).data;
+
+    let top = height;
+    let bottom = 0;
+    let left = width;
+    let right = 0;
+    let found = false;
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 4;
+        const r = imageData[i];
+        const g = imageData[i + 1];
+        const b = imageData[i + 2];
+        const a = imageData[i + 3];
+
+        // Pixel non blanc
+        if (a > 0 && (r < 245 || g < 245 || b < 245)) {
+          found = true;
+          if (x < left) left = x;
+          if (x > right) right = x;
+          if (y < top) top = y;
+          if (y > bottom) bottom = y;
+        }
+      }
+    }
+
+    if (!found) return canvas;
+
+    left = Math.max(0, left - padding);
+    top = Math.max(0, top - padding);
+    right = Math.min(width - 1, right + padding);
+    bottom = Math.min(height - 1, bottom + padding);
+
+    const cropWidth = right - left + 1;
+    const cropHeight = bottom - top + 1;
+
+    return cropCanvas(canvas, left, top, cropWidth, cropHeight);
+  }
+
+  async function extractSlideCanvases(file) {
+    const data = await fileToUint8Array(file);
+    const pdf = await pdfjsLib.getDocument({ data }).promise;
+    const slides = [];
+
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+      setStatus(`Analyse de la page ${pageNumber} / ${pdf.numPages}…`);
+      const page = await pdf.getPage(pageNumber);
+      const fullCanvas = await renderPdfPageToCanvas(page);
+
+      if (shouldSplitIntoTwoSlides(fullCanvas)) {
+        // Ancien mode : 2 slides par page
+        slides.push(trimWhiteMargins(makeHalfCanvas(fullCanvas, 'top')));
+        slides.push(trimWhiteMargins(makeHalfCanvas(fullCanvas, 'bottom')));
+      } else {
+        // Nouveau mode : 1 slide par page
+        slides.push(trimWhiteMargins(fullCanvas));
+      }
+    }
+
+    return slides;
+  }
+
+  function makeEmptyParagraphs(count) {
+    return Array.from({ length: count }, () => new Paragraph({ children: [new TextRun('')] }));
+  }
+
+  async function buildWordDoc(file) {
+    const slides = await extractSlideCanvases(file);
+    const children = [];
+
+    for (let i = 0; i < slides.length; i++) {
+      setStatus(`Insertion de la slide ${i + 1} / ${slides.length} dans Word…`);
+      const slideCanvas = slides[i];
+      const imageData = await canvasToUint8Array(slideCanvas);
+
+      const maxWidth = 620;
+      const maxHeight = 760;
+
+      let targetWidth = maxWidth;
+      let targetHeight = Math.round(targetWidth * (slideCanvas.height / slideCanvas.width));
+
+      if (targetHeight > maxHeight) {
+        targetHeight = maxHeight;
+        targetWidth = Math.round(targetHeight * (slideCanvas.width / slideCanvas.height));
+      }
+
+      children.push(
+        new Paragraph({
+          pageBreakBefore: i > 0,
+          alignment: AlignmentType.CENTER,
+          children: [
+            new ImageRun({
+              type: 'jpg',
+              data: imageData,
+              transformation: {
+                width: targetWidth,
+                height: targetHeight,
+              },
+            }),
+          ],
+        })
+      );
+
+      children.push(...makeEmptyParagraphs(5));
+    }
+
+    const doc = new Document({
+      sections: [
+        {
+          properties: {
+            page: {
+              margin: {
+                top: 720,
+                right: 720,
+                bottom: 720,
+                left: 720,
+              },
+              size: {
+                orientation: PageOrientation.PORTRAIT,
+              },
+            },
+          },
+          children,
+        },
+      ],
+    });
+
+    return await Packer.toBlob(doc);
+  }
+
+  function downloadBlob(blob, fileName) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  async function generateWord() {
+    const file = pdfFileInput.files?.[0];
+    if (!file) {
+      setStatus('Choisis d\'abord un PDF.', 'err');
+      return;
+    }
+
+    generateBtn.disabled = true;
+    setStatus('Génération du document Word en cours…');
+
+    try {
+      const blob = await buildWordDoc(file);
+      const safeName = file.name.replace(/\.pdf$/i, '').replace(/[^a-z0-9-_]+/gi, '_');
+      downloadBlob(blob, `${safeName || 'notes'}_notes.docx`);
+      setStatus('Document Word généré avec succès.', 'ok');
+    } catch (error) {
+      console.error(error);
+      setStatus(`Erreur : ${error?.message || error}`, 'err');
+    } finally {
+      generateBtn.disabled = false;
+    }
+  }
+
+  generateBtn.addEventListener('click', generateWord);
+</script>
+</body>
+</html>
