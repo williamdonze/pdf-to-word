@@ -125,9 +125,9 @@
     }
 
     h1 {
-      margin: 0 0 12px;
+      margin: 0 0 25px;
       font-size: clamp(34px, 5vw, 60px);
-      line-height: 0.98;
+      line-height: 1.2;
       letter-spacing: -0.04em;
     }
 
@@ -554,10 +554,10 @@
     <div class="shell">
       <section class="hero">
         <div class="hero-copy">
-          <div class="eyebrow">Conversion rapide et propre</div>
-          <h1>PDF → Word pour notes</h1>
+          <div class="eyebrow">Conversion rapide, simple et 100% locale</div>
+          <h1>Transforme tes slides PDF en document Word prêt pour la prise de notes</h1>
           <p class="sub">
-            Charge un PDF de slides : l’outil détecte automatiquement le format, sépare les slides si besoin, puis crée un document Word avec une slide par page à télécharger.
+            Importe ton PDF de slides : l’outil détecte automatiquement le format, organise les pages et génère un document Word avec une slide par page et un espace dédié pour écrire tes notes.<br>
           </p>
         </div>
 
@@ -569,7 +569,7 @@
           <div class="card-head">
             <div>
               <h2 class="section-title">Générer le document</h2>
-              <p class="section-sub">Même comportement, présentation retravaillée pour être plus claire et plus moderne.</p>
+              <p class="section-sub">Tout se fait directement sur ton ordinateur : aucun fichier n’est envoyé ni stocké en ligne.</p>
             </div>
           </div>
 
@@ -580,19 +580,19 @@
               <div class="upload-icon">↑</div>
               <div>
                 <p class="upload-title">Sélection du fichier</p>
-                <p class="upload-sub">Choisis ton document PDF, puis lance la génération du Word.</p>
+                <p class="upload-sub">Sélectionne ton PDF de cours, puis lance la génération du document Word.</p>
               </div>
             </div>
             <input id="pdfFile" type="file" accept="application/pdf" />
           </div>
 
           <div class="action-row">
-            <button id="generateBtn" type="button">Générer le Word</button>
+            <button id="generateBtn" type="button">Générer le document Word</button>
           </div>
 
           <div class="status-wrap" aria-live="polite">
             <div class="status-label"><span class="status-dot"></span> Statut</div>
-            <div id="status" class="status">En attente d'un PDF.</div>
+            <div id="status" class="status">Ajoute un PDF pour commencer</div>
           </div>
         </section>
       </div>
