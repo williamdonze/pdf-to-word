@@ -222,6 +222,7 @@
       border: 1.5px dashed rgba(91,124,255,0.24);
       background: linear-gradient(180deg, rgba(91,124,255,0.04), rgba(255,255,255,0.84));
       transition: border-color .2s ease, background .2s ease, transform .2s ease, box-shadow .2s ease;
+      cursor: pointer;
     }
 
     .upload-shell.dragover {
@@ -401,15 +402,6 @@
     .status.ok { color: var(--ok); }
     .status.err { color: var(--danger); }
 
-    .hint {
-      margin-top: 18px;
-      padding-top: 18px;
-      border-top: 1px solid rgba(23,32,51,0.08);
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.75;
-    }
-
     .preview-section {
       margin-top: 26px;
     }
@@ -576,9 +568,7 @@
           </div>
 
           <div class="action-row">
-            <button id="previewBtn" type="button" class="secondary-btn">
-  Prévisualiser
-</button>
+            <button id="previewBtn" type="button" class="secondary-btn">Prévisualiser</button>
             <button id="downloadBtn" type="button">Télécharger le Word</button>
           </div>
 
@@ -586,7 +576,6 @@
             <div class="status-label"><span class="status-dot"></span> Statut</div>
             <div id="status" class="status">Aucun PDF chargé.</div>
           </div>
-
         </section>
 
         <section class="preview-section">
@@ -896,6 +885,7 @@
             new Paragraph({
               alignment: AlignmentType.CENTER,
               spacing: { after: 200 },
+              style: "Normal",
               children: [
                 new ImageRun({
                   data: imageBuffer,
@@ -911,13 +901,15 @@
           children.push(
             new Paragraph({
               text: "",
-              spacing: { after: 200 }
+              spacing: { after: 200 },
+              style: "Normal"
             })
           );
 
           if (i < extractedImages.length - 1) {
             children.push(
               new Paragraph({
+                style: "Normal",
                 children: [new PageBreak()]
               })
             );
@@ -925,6 +917,43 @@
         }
 
         const doc = new Document({
+          styles: {
+            default: {
+              document: {
+                run: {
+                  font: "Aptos",
+                  size: 22,
+                  language: "fr-FR"
+                },
+                paragraph: {
+                  spacing: {
+                    after: 0,
+                    line: 240
+                  }
+                }
+              }
+            },
+            paragraphStyles: [
+              {
+                id: "Normal",
+                name: "Normal",
+                basedOn: "Normal",
+                next: "Normal",
+                quickFormat: true,
+                run: {
+                  font: "Aptos",
+                  size: 22,
+                  language: "fr-FR"
+                },
+                paragraph: {
+                  spacing: {
+                    after: 0,
+                    line: 240
+                  }
+                }
+              }
+            ]
+          },
           sections: [
             {
               properties: {},
@@ -959,6 +988,12 @@
         await generateWord();
       } finally {
         setBusy(false);
+      }
+    });
+
+    dropZone.addEventListener("click", () => {
+      if (!pdfInput.disabled) {
+        pdfInput.click();
       }
     });
 
@@ -1008,7 +1043,7 @@
 
     pdfType.addEventListener("change", () => {
       clearPreparedData();
-      setStatus("Format modifié. Le PDF sera retraité avec ce nouveau format.", "");
+      setStatus("Format modifié. Le PDF sera retraité avec ce nouveau format.");
     });
   </script>
 </body>
